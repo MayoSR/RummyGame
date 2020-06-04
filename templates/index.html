@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html class="no-js">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+    <style>
+        #main-container {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            right: 0px;
+            bottom: 0px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #login-card {
+            width: 30%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid" id="main-container">
+        <div class="card" id="login-card">
+            {% if creator %}
+                <form action="http://localhost:5000/start" method="POST">
+            {% else %}
+                <form action={{serverhex}} method="POST">
+            {% endif %}
+                    <div class="card-header">Login</div>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label>Name</label>
+                            <input class="form-control" placeholder="Name" name="uname" id="email">
+                        </div>
+                    </div>
+                    <div class="card-footer">
+                        {% if creator %}
+                            <button type="submit" class="btn btn-primary">Create Game</button>
+                        {% else %}
+                            <button type="submit" class="btn btn-primary">Continue</button>
+                        {% endif %}
+                    </div>
+                </form>
+        </div>
+    </div>
+    <script></script>
+</body>
+
+</html>

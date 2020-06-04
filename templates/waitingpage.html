@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html class="no-js">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"
+        integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+    <style>
+        #main-container {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            right: 0px;
+            bottom: 0px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #login-card,
+        #join-alert {
+            width: 30%;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid" id="main-container">
+        <div class="alert alert-success alert-dismissible mb-3" id="join-alert"></div>
+        <div class="card" id="login-card">
+            <form  action={{"http://localhost:5000/starting/" + share_stub}} style="width:100%">
+                <div class="card-header">Invite Others</div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input class="form-control" id="link-ip" value={{share_link}} onclick="copyToClipboard()" />
+                            <div class="input-group-append">
+                                <span class="input-group-text" id="basic-addon2" style="cursor:pointer"
+                                    onclick="copyToClipboard()">Copy link</span>
+                            </div>
+                        </div>
+                        {% if lobby_leader %}
+                            <br>
+                            <button type="button" onclick="beginGame()" class="btn btn-primary">Start game</button>
+                        {% endif %}
+                        <span id="url-stub" style="opacity:0;position: absolute;">{{share_stub}}</span>
+                        <span id="uname-stub" style="opacity:0;position: absolute;">{{uname}}</span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div id="joined-players">
+
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+    <script>
+
+        var socket = io();
+
+        socket.on('connect', function () {
+            socket.emit('join', { username:  document.getElementById("uname-stub").textContent, room: document.getElementById("url-stub").textContent });
+        });
+
+        function beginGame(){
+            socket.emit('start_game', { room: document.getElementById("url-stub").textContent });
+        }
+
+        socket.on('starting_game',function(data){
+            let uname = document.getElementById("uname-stub").textContent
+            let room = document.getElementById("url-stub").textContent
+            document.cookie = "username="+uname
+            document.cookie = "room="+room
+            window.location.href = "http://localhost:5000/rummy/" + document.getElementById("url-stub").textContent
+        })
+
+        socket.on('message', function (data) {
+            $("#join-alert").fadeIn("slow", () => {
+                $("#join-alert").text(data.split("-").pop() + " has joined the game")
+            }).delay(2000).fadeOut('slow')
+            $("#joined-players").empty()
+            data.split("-").forEach(element => {
+                $("#joined-players").append($("<h4></h4>").text(element))
+            });
+        });
+
+        function copyToClipboard() {
+            var copyText = document.getElementById("link-ip");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            document.execCommand("copy");
+        }
+
+        function addToLobby() {
+
+        }
+
+    </script>
+</body>
+
+</html>

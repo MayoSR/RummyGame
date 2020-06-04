@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html class="no-js">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title></title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css">
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.16.0/umd/popper.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.0/js/bootstrap.min.js"></script>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/socket.io/2.2.0/socket.io.js"
+        integrity="sha256-yr4fRk/GU1ehYJPAs8P4JlTgu0Hdsp4ZKrx8bDEDC3I=" crossorigin="anonymous"></script>
+    <style>
+        #main-container {
+            position: absolute;
+            top: 0px;
+            left: 0px;
+            right: 0px;
+            bottom: 0px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .playing-card {
+            height: 240px;
+            width: 175px;
+            margin-right: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container-fluid" id="main-container">
+        <div class="row" id="deck">
+            <div class="card bg-info text-white playing-card">
+                <div class="card-body">Info card</div>
+            </div>
+            <div class="card bg-info text-white playing-card">
+                <div class="card-body">Info card</div>
+            </div>
+        </div>
+        <br><br>
+        <div id="your-cards">
+            <div class="row" id="row-cards">
+
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        var socket = io();
+        var cookie = document.cookie.split(";")
+
+        for (i = 0; i < 7; i++) {
+            $("#row-cards").append($("<div></div>").addClass("card bg-info text-white playing-card").append($("<div></div>").addClass("card-body").text("Info card")))
+        }
+
+        socket.emit('loaded', {"username": cookie[0].split("=")[1], "room": cookie[1].split("=")[1]});
+        
+        socket.on('distribute_cards', function (data) {
+            console.log("here", data)
+        });
+
+
+        // $.ajax({
+        //     url:"http://localhost:5000/cards",
+        //     data:{"username":sessionStorage.getItem("username"),"gameserver":sessionStorage.getItem("gameserver")},
+        //     method:"POST",
+        //     success:function(data){
+        //         console.log(data)
+        //     }
+        // })
+    </script>
+</body>
+
+</html>
