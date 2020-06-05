@@ -31,23 +31,61 @@
             width: 175px;
             margin-right: 20px;
         }
+
+        .card-design {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 200px;
+            width: 130px;
+            border: 1px solid black;
+            border-radius: 10px;
+            margin-right: 10px;
+            background: white;
+        }
+
+        .card-design * {
+            pointer-events: none;
+        }
+
+        .card-suit-black {
+            height: 40px;
+            width: 40px;
+        }
+
+        .card-suit-red {
+            height: 40px;
+            width: 40px;
+        }
+
+        .card-digit-black {
+            font-size: 64px;
+        }
+
+        .card-digit-red {
+            font-size: 64px;
+            color: red;
+        }
     </style>
 </head>
 
 <body>
     <div class="container-fluid" id="main-container">
+        <div class="alert alert-success alert-dismissible" id="turn-alert" style="width:100%">It's your turn!</div>
         <div class="row" id="deck">
-            <div class="card bg-info text-white playing-card">
-                <div class="card-body">Info card</div>
+            <div class="card-design" onclick="getTopCard()">
+                <h1>
+                    Deck
+                </h1>
             </div>
-            <div class="card bg-info text-white playing-card">
-                <div class="card-body">Info card</div>
+            <div id="top-card" ondrop="drop(event)" ondragover="allowDrop(event)">
+
             </div>
         </div>
         <br><br>
         <div id="your-cards">
             <div class="row" id="row-cards">
-
             </div>
         </div>
     </div>
@@ -56,26 +94,105 @@
 
         var socket = io();
         var cookie = document.cookie.split(";")
+        var picked = false
+        var discarded = false
+        var pickedElement = null
 
-        for (i = 0; i < 7; i++) {
-            $("#row-cards").append($("<div></div>").addClass("card bg-info text-white playing-card").append($("<div></div>").addClass("card-body").text("Info card")))
+        // socket.on('connect', function () {
+        //     socket.emit('join', { username:  document.getElementById("uname-stub").textContent, room: document.getElementById("url-stub").textContent });
+        // });
+
+        function toCard(element) {
+            if (element.suit === "club" || element.suit === "spade") {
+                var img = $("<img />").addClass("card-suit-black").attr("src", "http://localhost:5000/static/images/" + element.suit + ".png")
+                var digit = $("<h1></h1>").addClass("card-digit-black").text(element.number)
+            }
+            else {
+                var img = $("<img />").addClass("card-suit-red").attr("src", "http://localhost:5000/static/images/" + element.suit + ".png")
+                var digit = $("<h1></h1>").addClass("card-digit-red").text(element.number)
+            }
+            let cardContainer = $("<div draggable='true' ondragstart='drag(event)'  ondrop='swapCards(event)' ondragover='allowDrop(event)' id='" + element.id + "'></div>").addClass("card-design").append($("<div></div>").addClass("inner-card").append(img).append(digit))
+            return cardContainer
         }
 
-        socket.emit('loaded', {"username": cookie[0].split("=")[1], "room": cookie[1].split("=")[1]});
-        
-        socket.on('distribute_cards', function (data) {
-            console.log("here", data)
+        socket.on('connect', function () {
+            socket.emit('join', { "username": cookie[0].split("=")[1], "room": cookie[1].split("=")[1] });
+            socket.emit('loaded', { "username": cookie[0].split("=")[1], "room": cookie[1].split("=")[1], status: sessionStorage.getItem("ingame") === null ? "no" : "yes" });
         });
 
+        function getTopCard() {
 
-        // $.ajax({
-        //     url:"http://localhost:5000/cards",
-        //     data:{"username":sessionStorage.getItem("username"),"gameserver":sessionStorage.getItem("gameserver")},
-        //     method:"POST",
-        //     success:function(data){
-        //         console.log(data)
-        //     }
-        // })
+            if (!picked) {
+                $.ajax({
+                    url: "http://localhost:5000/top",
+                    method: "post",
+                    contentType: "application/json",
+                    data: JSON.stringify({ "username": cookie[0].split("=")[1], "room": cookie[1].split("=")[1] }),
+                    success: function (data) {
+                        $("#row-cards").append(toCard(data))
+                    }
+                })
+            }
+            picked = true
+            checkTurnEnd()
+        }
+
+        socket.on('distribute_cards', function (data) {
+            let parsedData = JSON.parse(data)
+            parsedData["cards"].forEach(element => {
+                $("#row-cards").append(toCard(element))
+            });
+            sessionStorage.setItem("ingame", cookie[1].split("=")[1])
+
+        });
+
+        socket.on("top_card", function (data) {
+            let parsedData = JSON.parse(data)
+            $("#top-card").empty()
+            $("#top-card").append(toCard(parsedData))
+        })
+
+        socket.on("next_turn", function () {
+            $("#turn-alert").fadeIn("slow")
+        })
+
+        function allowDrop(ev) {
+            ev.preventDefault();
+        }
+
+        function drag(ev) {
+            pickedElement = ev.target
+            ev.dataTransfer.setData("text/html", ev.target.outerHTML);
+        }
+
+        function drop(ev) {
+            ev.preventDefault();
+            var data = ev.dataTransfer.getData("text/html");
+            $("#top-card").empty()
+            $("#top-card").append($(data))
+            var card_id = $(pickedElement).attr("id")
+            $(pickedElement).remove()
+            socket.emit("discard", { "id": card_id, "username": cookie[0].split("=")[1], "room": cookie[1].split("=")[1] })
+            discarded = true
+            checkTurnEnd()
+        }
+
+        function checkTurnEnd() {
+            if (discarded && picked) {
+                socket.emit("turn_complete", { "username": cookie[0].split("=")[1], "room": cookie[1].split("=")[1] })
+                $("#turn-alert").fadeOut("slow")
+            }
+        }
+
+        function swapCards(ev) {
+            var ele1 = $($(ev.target).children())
+            var ele2 = $($(pickedElement).children())
+            $(ev.target).empty()
+            $(ev.target).append(ele2)
+            $(pickedElement).empty()
+            $(pickedElement).append(ele1)
+        }
+
     </script>
 </body>
 
