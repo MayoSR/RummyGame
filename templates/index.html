@@ -34,7 +34,7 @@
     <div class="container-fluid" id="main-container">
         <div class="card" id="login-card">
             {% if creator %}
-                <form action="http://localhost:5000/start" method="POST">
+                <form action="http://192.168.1.13:5000/start" method="POST">
             {% else %}
                 <form action={{serverhex}} method="POST">
             {% endif %}

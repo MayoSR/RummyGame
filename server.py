@@ -60,7 +60,7 @@ class GameSetup(object):
     def __init__(self):
         self.gameStub = ''.join(random.choice(
             string.ascii_letters + string.digits) for x in range(6))
-        self.gameURL = "http://localhost:5000/" + self.gameStub
+        self.gameURL = "http://192.168.1.13:5000/" + self.gameStub
         self.room_name = self.gameStub
         self.user_sid_map = {}
         ongoing_games[self.gameStub] = self
@@ -82,7 +82,7 @@ class GameSetup(object):
         return self.deck.pop()
 
     def convertToJSON(self, card):
-        return {"id": card.id, "suit": card.suit, "number": card.number, "img": card.img}
+        return {"id": card.id, "suit": card.suit, "number": card.number, "img": card.img, "status": "valid"}
 
     def setClientSID(self, uname, sid):
         self.user_sid_map[uname] = sid
@@ -120,7 +120,7 @@ def default_home():
 
 @app.route("/<server>")
 def joining_home(server):
-    return render_template("index.html", serverhex="http://localhost:5000/start/"+server, creator=False)
+    return render_template("index.html", serverhex="http://192.168.1.13:5000/start/"+server, creator=False)
 
 
 @app.route("/start/<server>", methods=["POST"])
@@ -166,6 +166,7 @@ def begin(data):
     room = data['room']
     game = ongoing_games[room]
     game.setUserCards()
+    emit("next_player", room=game.user_sid_map[game.get_next_player().name])
     emit("starting_game", room=room)
 
 
@@ -180,16 +181,11 @@ def discard(data):
     username = data['username']
     card_id = data["id"]
     game = ongoing_games[room]
-    game.top_card = game.user_map[username].remove_card(card_id)
-    emit("top_card", json.dumps(game.convertToJSON(game.top_card)), room=room)
-
-
-@socketio.on('turn_complete')
-def next_player(data):
-    room = data["room"]
-    username = data['username']
-    game = ongoing_games[room]
-    emit("next_player",room=game.user_sid_map[game.get_next_player().name])
+    if game.users[game.cur_usr].name == username:
+        game.top_card = game.user_map[username].remove_card(card_id)
+        emit("top_card", json.dumps(game.convertToJSON(game.top_card)), room=room)
+    else:
+        emit("not_your_turn", room=game.user_sid_map[username])
 
 
 @app.route("/top", methods=["POST"])
@@ -198,10 +194,30 @@ def top_deck():
     room = data["room"]
     username = data['username']
     game = ongoing_games[room]
-    card = game.getTopCard()
-    game.user_map[username].cards.append(card)
-    return game.convertToJSON(card)
+    if game.users[game.cur_usr].name == username:
+        card = game.getTopCard()
+        game.user_map[username].cards.append(card)
+        return game.convertToJSON(card)
+    else:
+        return {"status": "invalid"}
 
+
+@socketio.on('turn_complete')
+def next_player(data):
+    room = data["room"]
+    username = data['username']
+    game = ongoing_games[room]
+    emit("next_player", room=game.user_sid_map[game.get_next_player().name])
+
+@socketio.on('take_discarded_card')
+def take_discard_card(data):
+    room = data["room"]
+    username = data['username']
+    game = ongoing_games[room]
+    game.user_map[username].cards.append(game.top_card)
+    emit("top_card", json.dumps({"id": -1, "suit": "heart", "number": 20, "img": "xyz", "status": "valid"}), room=room)
+    emit("add_to_user_deck", json.dumps(game.convertToJSON(game.top_card)), room=game.user_sid_map[username])
+    
 
 @socketio.on('loaded')
 def game_state_loaded(data):
@@ -210,6 +226,7 @@ def game_state_loaded(data):
     username = data['username']
     game = ongoing_games[room]
     emit("top_card", json.dumps(game.convertToJSON(game.top_card)), room=room)
+    print(game.cur_usr)
     game.user_sid_map[username] = request.sid
     emit("distribute_cards", json.dumps(
         {"cards": game.user_map[username].getCardsAsJSON()}), room=game.user_sid_map[username])
@@ -217,4 +234,4 @@ def game_state_loaded(data):
 
 if __name__ == "__main__":
 
-    socketio.run(app)
+    socketio.run(app, debug=True,host='0.0.0.0')
