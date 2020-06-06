@@ -219,7 +219,7 @@ def take_discard_card(data):
     username = data['username']
     game = ongoing_games[room]
     next_name = game.get_next_player().name
-    emit("next_turn", room=game.user_sid_map[next_name])
+    emit("next_turn",json.dumps({"turn" : game.users[game.cur_usr].name }), room=room)
 
 @socketio.on('loaded')
 def game_state_loaded(data):
@@ -231,9 +231,8 @@ def game_state_loaded(data):
     game.user_sid_map[username] = request.sid
     emit("distribute_cards", json.dumps(
         {"cards": game.user_map[username].getCardsAsJSON()}), room=game.user_sid_map[username])
-    if not game.game_start:
-        emit("next_turn", room=game.user_sid_map[username])
-        game.game_start = True
+    emit("next_turn",json.dumps({"turn" : game.users[game.cur_usr].name }), room=room)
+    game.game_start = True
 
 
 if __name__ == "__main__":

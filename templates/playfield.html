@@ -68,7 +68,7 @@
             color: red;
         }
 
-        #top-card *{
+        #top-card * {
             pointer-events: none;
         }
     </style>
@@ -87,7 +87,8 @@
             </div>
         </div>
         <br>
-        <div class="alert alert-success alert-dismissible" id="turn-alert" style="width:100%;display:none;" >It's your turn!</div>
+        <div class="alert alert-success alert-dismissible" id="turn-alert" style="width:100%;display:none;">It's your
+            turn!</div>
         <br>
         <div id="your-cards">
             <div class="row" id="row-cards">
@@ -138,7 +139,7 @@
                     contentType: "application/json",
                     data: JSON.stringify({ "username": username, "room": room }),
                     success: function (data) {
-                        console.log("Validation",data)
+                        console.log("Validation", data)
                         if (data["status"] === "valid") {
                             $("#row-cards").append(toCard(data))
                         }
@@ -147,10 +148,10 @@
                         }
                     }
                 })
+                picked = true
+                sessionStorage.setItem("picked", "true")
+                checkTurnEnd()
             }
-            picked = true
-            sessionStorage.setItem("picked", "true")
-            checkTurnEnd()
         }
 
         socket.on('distribute_cards', function (data) {
@@ -168,9 +169,12 @@
             $("#top-card").append(toCard(parsedData))
         })
 
-        socket.on("next_turn", function () {
-            $("#turn-alert").fadeIn("slow")
-            turn = true
+        socket.on("next_turn", function (data) {
+            let turnData = JSON.parse(data)
+            if (turnData["turn"] === username) {
+                $("#turn-alert").fadeIn("slow")
+                turn = true
+            }
         })
 
         socket.on("not_your_turn", function () {
@@ -208,7 +212,7 @@
                 discarded = true
                 checkTurnEnd()
             }
-            else{
+            else {
                 console.log("Not your turn")
             }
         }
