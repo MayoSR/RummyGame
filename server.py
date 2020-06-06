@@ -70,9 +70,11 @@ class GameSetup(object):
         self.user_map = {}
         self.top_card = None
         self.game_started = False
+        self.game_start=False
 
     def get_next_player(self):
-        return self.users[(self.cur_usr + 1) % len(self.users)]
+        self.cur_usr = (self.cur_usr + 1) % len(self.users)
+        return self.users[self.cur_usr]
 
     def log_deck(self):
         for i in self.deck:
@@ -166,7 +168,6 @@ def begin(data):
     room = data['room']
     game = ongoing_games[room]
     game.setUserCards()
-    emit("next_player", room=game.user_sid_map[game.get_next_player().name])
     emit("starting_game", room=room)
 
 
@@ -194,6 +195,7 @@ def top_deck():
     room = data["room"]
     username = data['username']
     game = ongoing_games[room]
+    print(game.cur_usr)
     if game.users[game.cur_usr].name == username:
         card = game.getTopCard()
         game.user_map[username].cards.append(card)
@@ -201,13 +203,6 @@ def top_deck():
     else:
         return {"status": "invalid"}
 
-
-@socketio.on('turn_complete')
-def next_player(data):
-    room = data["room"]
-    username = data['username']
-    game = ongoing_games[room]
-    emit("next_player", room=game.user_sid_map[game.get_next_player().name])
 
 @socketio.on('take_discarded_card')
 def take_discard_card(data):
@@ -218,6 +213,13 @@ def take_discard_card(data):
     emit("top_card", json.dumps({"id": -1, "suit": "heart", "number": 20, "img": "xyz", "status": "valid"}), room=room)
     emit("add_to_user_deck", json.dumps(game.convertToJSON(game.top_card)), room=game.user_sid_map[username])
     
+@socketio.on('turn_complete')
+def take_discard_card(data):
+    room = data["room"]
+    username = data['username']
+    game = ongoing_games[room]
+    next_name = game.get_next_player().name
+    emit("next_turn", room=game.user_sid_map[next_name])
 
 @socketio.on('loaded')
 def game_state_loaded(data):
@@ -226,10 +228,12 @@ def game_state_loaded(data):
     username = data['username']
     game = ongoing_games[room]
     emit("top_card", json.dumps(game.convertToJSON(game.top_card)), room=room)
-    print(game.cur_usr)
     game.user_sid_map[username] = request.sid
     emit("distribute_cards", json.dumps(
         {"cards": game.user_map[username].getCardsAsJSON()}), room=game.user_sid_map[username])
+    if not game.game_start:
+        emit("next_turn", room=game.user_sid_map[username])
+        game.game_start = True
 
 
 if __name__ == "__main__":

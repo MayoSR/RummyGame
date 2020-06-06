@@ -67,6 +67,10 @@
             font-size: 64px;
             color: red;
         }
+
+        #top-card *{
+            pointer-events: none;
+        }
     </style>
 </head>
 
@@ -83,7 +87,7 @@
             </div>
         </div>
         <br>
-        <div class="alert alert-success alert-dismissible" id="turn-alert" style="width:100%">It's your turn!</div>
+        <div class="alert alert-success alert-dismissible" id="turn-alert" style="width:100%;display:none;" >It's your turn!</div>
         <br>
         <div id="your-cards">
             <div class="row" id="row-cards">
@@ -100,10 +104,6 @@
         var discarded = sessionStorage.getItem("discarded") === null ? false : true
         var pickedElement = null
         var turn = false
-
-        // socket.on('connect', function () {
-        //     socket.emit('join', { username:  document.getElementById("uname-stub").textContent, room: document.getElementById("url-stub").textContent });
-        // });
 
         function toCard(element) {
             if (element.suit === "club" || element.suit === "spade") {
@@ -138,6 +138,7 @@
                     contentType: "application/json",
                     data: JSON.stringify({ "username": username, "room": room }),
                     success: function (data) {
+                        console.log("Validation",data)
                         if (data["status"] === "valid") {
                             $("#row-cards").append(toCard(data))
                         }
@@ -207,16 +208,21 @@
                 discarded = true
                 checkTurnEnd()
             }
+            else{
+                console.log("Not your turn")
+            }
         }
 
         function checkTurnEnd() {
             if (discarded && picked) {
-
                 socket.emit("turn_complete", { "username": username, "room": room })
                 sessionStorage.removeItem("picked")
                 sessionStorage.removeItem("discarded")
                 $("#turn-alert").fadeOut("slow")
                 turn = false
+                discarded = false
+                picked = false
+                console.log("Turn complete")
             }
         }
 
