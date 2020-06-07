@@ -21,9 +21,10 @@
             right: 0px;
             bottom: 0px;
             display: flex;
-            justify-content: center;
+            justify-content: flex-start;
             align-items: center;
             flex-direction: column;
+            padding:40px;
         }
 
         .playing-card {
@@ -37,16 +38,17 @@
             justify-content: center;
             align-items: center;
             flex-direction: column;
-            height: 200px;
-            width: 130px;
+            height: 300px;
+            width: 180px;
             border: 1px solid black;
             border-radius: 10px;
             margin-right: 10px;
             background: white;
+            position: relative;
         }
 
         .card-design * {
-            pointer-events: none;
+            pointer-events: none;   
         }
 
         .card-suit-black {
@@ -71,6 +73,40 @@
         #top-card * {
             pointer-events: none;
         }
+
+        .row-card{
+            position: absolute;
+            top:0px;
+            bottom:0px
+        }
+
+        #row-cards{
+            position: relative;
+            height:350px;
+            width: 350px;
+        }
+
+        .corner-card{
+            position: absolute;
+            top:5px;
+            left:5px;
+        }
+
+        .corner-card img{
+            height:22px;
+            width:22px
+        }
+
+        .corner-card h1{
+            font-size: 20px;
+        }
+
+        .inner-card, .corner-card{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
     </style>
 </head>
 
@@ -90,9 +126,7 @@
         <div class="alert alert-success alert-dismissible" id="turn-alert" style="width:100%;display:none;">It's your
             turn!</div>
         <br>
-        <div id="your-cards">
-            <div class="row" id="row-cards">
-            </div>
+        <div class="row" id="row-cards">
         </div>
     </div>
 
@@ -105,6 +139,11 @@
         var discarded = sessionStorage.getItem("discarded") === null ? false : true
         var pickedElement = null
         var turn = false
+        var deg = -25
+        var leftOffsetCard = 0
+        var cardsInHand = null
+        var cardsInHandLen = 10
+        var degOffset = 5
 
         function toCard(element) {
             if (element.suit === "club" || element.suit === "spade") {
@@ -115,7 +154,22 @@
                 var img = $("<img />").addClass("card-suit-red").attr("src", "http://192.168.1.13:5000/static/images/" + element.suit + ".png")
                 var digit = $("<h1></h1>").addClass("card-digit-red").text(element.number)
             }
-            let cardContainer = $("<div draggable='true' ondragstart='drag(event)'  ondrop='swapCards(event)' ondragover='allowDrop(event)' id='" + element.id + "'></div>").addClass("card-design").append($("<div></div>").addClass("inner-card").append(img).append(digit))
+            let cardContainer = $("<div draggable='true' ondragstart='drag(event)'  ondrop='swapCards(event)' ondragover='allowDrop(event)' id='" + element.id + "'></div>").addClass("card-design").append($("<div></div>").addClass("inner-card").append(img).append(digit)).append($("<div></div>").addClass("corner-card").append(img.clone(img)).append(digit.clone(digit)))
+            return cardContainer
+        }
+
+        function toCardRow(element) {
+            if (element.suit === "club" || element.suit === "spade") {
+                var img = $("<img />").addClass("card-suit-black").attr("src", "http://192.168.1.13:5000/static/images/" + element.suit + ".png")
+                var digit = $("<h1></h1>").addClass("card-digit-black").text(element.number)
+            }
+            else {
+                var img = $("<img />").addClass("card-suit-red").attr("src", "http://192.168.1.13:5000/static/images/" + element.suit + ".png")
+                var digit = $("<h1></h1>").addClass("card-digit-red").text(element.number)
+            }
+            let cardContainer = $("<div draggable='true' ondragstart='drag(event)'  ondrop='swapCards(event)' ondragover='allowDrop(event)' id='" + element.id + "'></div>").addClass("card-design row-card").css({'transform':'rotate('+deg+'deg)','marginTop':Math.abs(deg)+'px','left':leftOffsetCard+"px"}).append($("<div></div>").addClass("inner-card").append(img).append(digit)).append($("<div></div>").addClass("corner-card").append(img.clone(img)).append(digit.clone(digit)))
+            deg+=degOffset
+            leftOffsetCard+=30
             return cardContainer
         }
 
@@ -130,6 +184,17 @@
             }
         }
 
+        function buildCardsToRow(){
+            deg = -22 + Math.floor((5 *(10 - (cardsInHand["cards"].length)))/2)
+            console.log(deg)
+            leftOffsetCard = 0
+            $("#row-cards").empty()
+            cardsInHand["cards"].forEach(element => {
+                
+                $("#row-cards").append(toCardRow(element))
+            });
+        }
+
         function getTopCard() {
 
             if (!picked) {
@@ -139,9 +204,10 @@
                     contentType: "application/json",
                     data: JSON.stringify({ "username": username, "room": room }),
                     success: function (data) {
-                        console.log("Validation", data)
                         if (data["status"] === "valid") {
-                            $("#row-cards").append(toCard(data))
+                           // $("#row-cards").append(toCardRow(data))
+                           cardsInHand["cards"].push(data)
+                           buildCardsToRow()
                         }
                         else {
                             console.log("Not your turn")
@@ -156,11 +222,9 @@
 
         socket.on('distribute_cards', function (data) {
             let parsedData = JSON.parse(data)
-            parsedData["cards"].forEach(element => {
-                $("#row-cards").append(toCard(element))
-            });
+            cardsInHand = parsedData
+            buildCardsToRow()
             sessionStorage.setItem("ingame", room)
-
         });
 
         socket.on("top_card", function (data) {
@@ -203,13 +267,21 @@
             ev.preventDefault();
             if (turn) {
                 var data = ev.dataTransfer.getData("text/html");
+                let cardInd = -1
                 $("#top-card").empty()
                 $("#top-card").append($(data))
                 var card_id = $(pickedElement).attr("id")
                 $(pickedElement).remove()
                 socket.emit("discard", { "id": card_id, "username": username, "room": room })
                 sessionStorage.setItem("discarded", "true")
+                cardsInHand["cards"].forEach((ele,ind)=>{
+                    if(ele["id"] == card_id){
+                        cardInd = ind
+                    }
+                })
+                cardsInHand["cards"].splice(cardInd,1)
                 discarded = true
+                buildCardsToRow()
                 checkTurnEnd()
             }
             else {
