@@ -34,7 +34,7 @@
     <div class="container-fluid" id="main-container">
         <div class="card" id="login-card">
             {% if creator %}
-                <form action="http://localhost:5000/start" method="POST" id="creator-form">
+                <form action="https://flask-socket-basics.herokuapp.com/start" method="POST" id="creator-form">
             {% else %}
                 <form action={{serverhex}} method="POST">
             {% endif %}

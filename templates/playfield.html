@@ -195,11 +195,11 @@
 
         function toCard(element) {
             if (element.suit === "club" || element.suit === "spade") {
-                var img = $("<img />").addClass("card-suit-black").attr("src", "http://localhost:5000/static/images/" + element.suit + ".png")
+                var img = $("<img />").addClass("card-suit-black").attr("src", "https://flask-socket-basics.herokuapp.com/static/images/" + element.suit + ".png")
                 var digit = $("<h1></h1>").addClass("card-digit-black").text(element.number)
             }
             else {
-                var img = $("<img />").addClass("card-suit-red").attr("src", "http://localhost:5000/static/images/" + element.suit + ".png")
+                var img = $("<img />").addClass("card-suit-red").attr("src", "https://flask-socket-basics.herokuapp.com/static/images/" + element.suit + ".png")
                 var digit = $("<h1></h1>").addClass("card-digit-red").text(element.number)
             }
             let cardContainer = $("<div draggable='true' ondragstart='drag(event)'  ondrop='swapCards(event)' ondragover='allowDrop(event)' id='" + element.id + "'></div>").addClass("card-design").append($("<div></div>").addClass("inner-card").append(img).append(digit)).append($("<div></div>").addClass("corner-card").append(img.clone(img)).append(digit.clone(digit)))
@@ -208,11 +208,11 @@
 
         function toCardRow(element) {
             if (element.suit === "club" || element.suit === "spade") {
-                var img = $("<img />").addClass("card-suit-black").attr("src", "http://localhost:5000/static/images/" + element.suit + ".png")
+                var img = $("<img />").addClass("card-suit-black").attr("src", "https://flask-socket-basics.herokuapp.com/static/images/" + element.suit + ".png")
                 var digit = $("<h1></h1>").addClass("card-digit-black").text(element.number)
             }
             else {
-                var img = $("<img />").addClass("card-suit-red").attr("src", "http://localhost:5000/static/images/" + element.suit + ".png")
+                var img = $("<img />").addClass("card-suit-red").attr("src", "https://flask-socket-basics.herokuapp.com/static/images/" + element.suit + ".png")
                 var digit = $("<h1></h1>").addClass("card-digit-red").text(element.number)
             }
             let cardContainer = $("<div draggable='true' ondragstart='drag(event)'  ondrop='swapCards(event)' ondragover='allowDrop(event)' id='" + element.id + "'></div>").addClass("card-design row-card").css({ 'transform': 'rotate(' + deg + 'deg)', 'marginTop': Math.abs(deg) + 'px', 'left': leftOffsetCard + "px" }).append($("<div></div>").addClass("inner-card").append(img).append(digit)).append($("<div></div>").addClass("corner-card").append(img.clone(img)).append(digit.clone(digit)))
@@ -267,7 +267,7 @@
 
             if (!picked) {
                 $.ajax({
-                    url: "http://localhost:5000/top",
+                    url: "https://flask-socket-basics.herokuapp.com/top",
                     method: "post",
                     contentType: "application/json",
                     data: JSON.stringify({ "username": username, "room": room }),

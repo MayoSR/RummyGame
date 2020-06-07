@@ -60,7 +60,7 @@ class GameSetup(object):
     def __init__(self):
         self.gameStub = ''.join(random.choice(
             string.ascii_letters + string.digits) for x in range(6))
-        self.gameURL = "http://localhost:5000/" + self.gameStub
+        self.gameURL = "https://flask-socket-basics.herokuapp.com/" + self.gameStub
         self.room_name = self.gameStub
         self.user_sid_map = {}
         ongoing_games[self.gameStub] = self
@@ -122,7 +122,7 @@ def default_home():
 
 @app.route("/<server>")
 def joining_home(server):
-    return render_template("index.html", serverhex="http://localhost:5000/start/"+server, creator=False)
+    return render_template("index.html", serverhex="https://flask-socket-basics.herokuapp.com/start/"+server, creator=False)
 
 
 @app.route("/start/<server>", methods=["POST"])
