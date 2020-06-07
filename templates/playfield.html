@@ -24,7 +24,7 @@
             justify-content: flex-start;
             align-items: center;
             flex-direction: column;
-            padding:40px;
+            padding: 40px;
         }
 
         .playing-card {
@@ -48,7 +48,7 @@
         }
 
         .card-design * {
-            pointer-events: none;   
+            pointer-events: none;
         }
 
         .card-suit-black {
@@ -74,44 +74,71 @@
             pointer-events: none;
         }
 
-        .row-card{
+        .row-card {
             position: absolute;
-            top:0px;
-            bottom:0px
+            top: 0px;
+            bottom: 0px
         }
 
-        #row-cards{
+        #row-cards {
             position: relative;
-            height:350px;
+            height: 350px;
             width: 350px;
         }
 
-        .corner-card{
+        .corner-card {
             position: absolute;
-            top:5px;
-            left:5px;
+            top: 5px;
+            left: 5px;
         }
 
-        .corner-card img{
-            height:22px;
-            width:22px
+        .corner-card img {
+            height: 22px;
+            width: 22px
         }
 
-        .corner-card h1{
+        .corner-card h1 {
             font-size: 20px;
         }
 
-        .inner-card, .corner-card{
+        .inner-card,
+        .corner-card {
             display: flex;
             justify-content: center;
             align-items: center;
             flex-direction: column;
+        }
+
+        #winner-cards{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #inner-winner-cards{
+            position: relative;
+            height:350px;
+            width:350px;
+        }
+
+        #winnerModal .modal-dialog{
+            max-width: 80vw !important; 
+        }
+
+        .modal-body{
+            height:450px !important;
         }
     </style>
 </head>
 
 <body>
     <div class="container-fluid" id="main-container">
+        <div class="alert alert-success alert-dismissible" id="turn-alert" style="display:none;min-width: 30%;">
+            It's your turn!
+        </div>
+        <div class="alert alert-danger alert-dismissible" id="not-turn-alert" style="display:none;min-width: 30%;">
+            It's not your turn!
+        </div>
         <div class="row" id="deck">
             <div class="card-design" onclick="getTopCard()">
                 <h1>
@@ -123,10 +150,30 @@
             </div>
         </div>
         <br>
-        <div class="alert alert-success alert-dismissible" id="turn-alert" style="width:100%;display:none;">It's your
-            turn!</div>
         <br>
         <div class="row" id="row-cards">
+        </div>
+        <div class="win-row">
+            <button class="btn btn-primary" onclick="winScreen()" data-toggle="modal" data-target="#winnerModal">Call win</button>
+        </div>
+        <div class="modal" id="winnerModal">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h4 class="modal-title" id="winner-title"></h4>
+                        <button type="button" class="close" data-dismiss="modal">&times;</button>
+                    </div>
+                    <div class="modal-body" id="winner-cards">
+                        <div id="inner-winner-cards">
+
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-danger" data-dismiss="modal" onclick="returnToLobby()">Return to lobby</button>
+                    </div>
+
+                </div>
+            </div>
         </div>
     </div>
 
@@ -144,14 +191,15 @@
         var cardsInHand = null
         var cardsInHandLen = 10
         var degOffset = 5
+        var admin = sessionStorage.getItem("admin") === null ? false : true
 
         function toCard(element) {
             if (element.suit === "club" || element.suit === "spade") {
-                var img = $("<img />").addClass("card-suit-black").attr("src", "http://192.168.1.13:5000/static/images/" + element.suit + ".png")
+                var img = $("<img />").addClass("card-suit-black").attr("src", "http://localhost:5000/static/images/" + element.suit + ".png")
                 var digit = $("<h1></h1>").addClass("card-digit-black").text(element.number)
             }
             else {
-                var img = $("<img />").addClass("card-suit-red").attr("src", "http://192.168.1.13:5000/static/images/" + element.suit + ".png")
+                var img = $("<img />").addClass("card-suit-red").attr("src", "http://localhost:5000/static/images/" + element.suit + ".png")
                 var digit = $("<h1></h1>").addClass("card-digit-red").text(element.number)
             }
             let cardContainer = $("<div draggable='true' ondragstart='drag(event)'  ondrop='swapCards(event)' ondragover='allowDrop(event)' id='" + element.id + "'></div>").addClass("card-design").append($("<div></div>").addClass("inner-card").append(img).append(digit)).append($("<div></div>").addClass("corner-card").append(img.clone(img)).append(digit.clone(digit)))
@@ -160,16 +208,16 @@
 
         function toCardRow(element) {
             if (element.suit === "club" || element.suit === "spade") {
-                var img = $("<img />").addClass("card-suit-black").attr("src", "http://192.168.1.13:5000/static/images/" + element.suit + ".png")
+                var img = $("<img />").addClass("card-suit-black").attr("src", "http://localhost:5000/static/images/" + element.suit + ".png")
                 var digit = $("<h1></h1>").addClass("card-digit-black").text(element.number)
             }
             else {
-                var img = $("<img />").addClass("card-suit-red").attr("src", "http://192.168.1.13:5000/static/images/" + element.suit + ".png")
+                var img = $("<img />").addClass("card-suit-red").attr("src", "http://localhost:5000/static/images/" + element.suit + ".png")
                 var digit = $("<h1></h1>").addClass("card-digit-red").text(element.number)
             }
-            let cardContainer = $("<div draggable='true' ondragstart='drag(event)'  ondrop='swapCards(event)' ondragover='allowDrop(event)' id='" + element.id + "'></div>").addClass("card-design row-card").css({'transform':'rotate('+deg+'deg)','marginTop':Math.abs(deg)+'px','left':leftOffsetCard+"px"}).append($("<div></div>").addClass("inner-card").append(img).append(digit)).append($("<div></div>").addClass("corner-card").append(img.clone(img)).append(digit.clone(digit)))
-            deg+=degOffset
-            leftOffsetCard+=30
+            let cardContainer = $("<div draggable='true' ondragstart='drag(event)'  ondrop='swapCards(event)' ondragover='allowDrop(event)' id='" + element.id + "'></div>").addClass("card-design row-card").css({ 'transform': 'rotate(' + deg + 'deg)', 'marginTop': Math.abs(deg) + 'px', 'left': leftOffsetCard + "px" }).append($("<div></div>").addClass("inner-card").append(img).append(digit)).append($("<div></div>").addClass("corner-card").append(img.clone(img)).append(digit.clone(digit)))
+            deg += degOffset
+            leftOffsetCard += 30
             return cardContainer
         }
 
@@ -184,33 +232,53 @@
             }
         }
 
-        function buildCardsToRow(){
-            deg = -22 + Math.floor((5 *(10 - (cardsInHand["cards"].length)))/2)
-            console.log(deg)
+        function buildCardsToRow() {
+            deg = -22 + Math.floor((5 * (10 - (cardsInHand["cards"].length))) / 2)
             leftOffsetCard = 0
             $("#row-cards").empty()
             cardsInHand["cards"].forEach(element => {
-                
                 $("#row-cards").append(toCardRow(element))
             });
         }
+
+        function returnToLobby(){
+            history.back()
+        }
+
+
+        function winScreen() {
+            socket.emit('winner', { "username": username, "room": room });
+        }
+
+        socket.on("winner_user",function(cards){
+            let winnerData = JSON.parse(cards)
+            deg = -22 + Math.floor((5 * (10 - (cardsInHand["cards"].length))) / 2)
+            leftOffsetCard = 0
+            $("#winner-title").text(winnerData["username"]+" has won!")
+            winnerData["cards"].forEach(element => {
+                $("#inner-winner-cards").append(toCardRow(element))
+            });
+            sessionStorage.clear()
+            sessionStorage.setItem("username",username)
+            sessionStorage.setItem("room",room)
+        })
 
         function getTopCard() {
 
             if (!picked) {
                 $.ajax({
-                    url: "http://192.168.1.13:5000/top",
+                    url: "http://localhost:5000/top",
                     method: "post",
                     contentType: "application/json",
                     data: JSON.stringify({ "username": username, "room": room }),
                     success: function (data) {
                         if (data["status"] === "valid") {
-                           // $("#row-cards").append(toCardRow(data))
-                           cardsInHand["cards"].push(data)
-                           buildCardsToRow()
+                            // $("#row-cards").append(toCardRow(data))
+                            cardsInHand["cards"].push(data)
+                            buildCardsToRow()
                         }
                         else {
-                            console.log("Not your turn")
+                            $('#not-turn-alert').show().delay(3000).fadeOut();
                         }
                     }
                 })
@@ -242,12 +310,13 @@
         })
 
         socket.on("not_your_turn", function () {
-            console.log("It's not your turn")
+            $('#not-turn-alert').show().delay(3000).fadeOut();
         })
 
         socket.on("add_to_user_deck", function (data) {
             if (!picked) {
-                $("#row-cards").append(toCard(JSON.parse(data)))
+                cardsInHand["cards"].push(JSON.parse(data))
+                buildCardsToRow()
             }
             picked = true
             sessionStorage.setItem("picked", "true")
@@ -274,18 +343,18 @@
                 $(pickedElement).remove()
                 socket.emit("discard", { "id": card_id, "username": username, "room": room })
                 sessionStorage.setItem("discarded", "true")
-                cardsInHand["cards"].forEach((ele,ind)=>{
-                    if(ele["id"] == card_id){
+                cardsInHand["cards"].forEach((ele, ind) => {
+                    if (ele["id"] == card_id) {
                         cardInd = ind
                     }
                 })
-                cardsInHand["cards"].splice(cardInd,1)
+                cardsInHand["cards"].splice(cardInd, 1)
                 discarded = true
                 buildCardsToRow()
                 checkTurnEnd()
             }
             else {
-                console.log("Not your turn")
+                $('#not-turn-alert').show().delay(3000).fadeOut();
             }
         }
 

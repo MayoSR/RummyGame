@@ -34,7 +34,7 @@
     <div class="container-fluid" id="main-container">
         <div class="card" id="login-card">
             {% if creator %}
-                <form action="http://192.168.1.13:5000/start" method="POST">
+                <form action="http://localhost:5000/start" method="POST" id="creator-form">
             {% else %}
                 <form action={{serverhex}} method="POST">
             {% endif %}
@@ -42,7 +42,7 @@
                     <div class="card-body">
                         <div class="form-group">
                             <label>Name</label>
-                            <input class="form-control" placeholder="Name" name="uname" id="email">
+                            <input class="form-control" placeholder="Name" name="uname" id="username">
                         </div>
                     </div>
                     <div class="card-footer">
@@ -55,7 +55,11 @@
                 </form>
         </div>
     </div>
-    <script></script>
+    <script>
+        $("#creator-form").submit(function(){
+            sessionStorage.setItem("admin",$("#username").val())
+        })
+    </script>
 </body>
 
 </html>

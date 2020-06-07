@@ -60,7 +60,7 @@ class GameSetup(object):
     def __init__(self):
         self.gameStub = ''.join(random.choice(
             string.ascii_letters + string.digits) for x in range(6))
-        self.gameURL = "http://192.168.1.13:5000/" + self.gameStub
+        self.gameURL = "http://localhost:5000/" + self.gameStub
         self.room_name = self.gameStub
         self.user_sid_map = {}
         ongoing_games[self.gameStub] = self
@@ -122,7 +122,7 @@ def default_home():
 
 @app.route("/<server>")
 def joining_home(server):
-    return render_template("index.html", serverhex="http://192.168.1.13:5000/start/"+server, creator=False)
+    return render_template("index.html", serverhex="http://localhost:5000/start/"+server, creator=False)
 
 
 @app.route("/start/<server>", methods=["POST"])
@@ -220,6 +220,13 @@ def take_discard_card(data):
     game = ongoing_games[room]
     next_name = game.get_next_player().name
     emit("next_turn",json.dumps({"turn" : game.users[game.cur_usr].name }), room=room)
+    
+@socketio.on('winner')
+def winner(data):
+    room = data["room"]
+    username = data['username']
+    game = ongoing_games[room]
+    emit("winner_user",json.dumps({"username":username,"cards":game.user_map[username].getCardsAsJSON()}), room=room)
 
 @socketio.on('loaded')
 def game_state_loaded(data):

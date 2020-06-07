@@ -32,7 +32,7 @@
     <div class="container-fluid" id="main-container">
         <div class="alert alert-success alert-dismissible mb-3" style="display:none" id="join-alert"></div>
         <div class="card" id="login-card">
-            <form  action={{"http://192.168.1.13:5000/starting/" + share_stub}} style="width:100%">
+            <form  action={{"http://localhost:5000/starting/" + share_stub}} style="width:100%">
                 <div class="card-header">Invite Others</div>
                 <div class="card-body">
                     <div class="form-group">
@@ -76,7 +76,7 @@
             let room = document.getElementById("url-stub").textContent
             sessionStorage.setItem("username",uname)
             sessionStorage.setItem("room",room)
-            window.location.href = "http://192.168.1.13:5000/rummy/" + document.getElementById("url-stub").textContent
+            window.location.href = "http://localhost:5000/rummy/" + document.getElementById("url-stub").textContent
         })
 
         socket.on('message', function (data) {
